@@ -238,7 +238,7 @@
                 Inteligência Artificial Pedagógica
             </span>
 
-            <h1 class="welcome-title">Adaptação Curricular & Elaboração de PEI</h1>
+            <h1 class="welcome-title">Adaptação Curricular &amp; Elaboração de PEI</h1>
 
             <p class="tagline">
                 “Personalização pedagógica baseada no Desenho Universal para a Aprendizagem (DUA) e alinhada às diretrizes da Educação Especial.”
@@ -377,7 +377,6 @@
         <a class="rodape-marca" href="../index.html">TransformEdu</a>
         <p>Núcleo de Atividades Adaptadas</p>
         <p class="rodape-frase">Recursos, estratégias e tecnologia para uma educação inclusiva.</p>
-    
     </footer>
 
     <!-- Lógica JavaScript Integrada -->
@@ -417,37 +416,55 @@
         }
 
         async function chamarGemini(promptTexto) {
-            var url = '/api/gerar-atividade';
+            // Substitua pela sua chave da API do Google AI Studio
+            var apiKey = "AQ.Ab8RN6JdD-5gFGMb_IHhAE8UhNPQ06ukaSx185_FeQBpPv3mFQ";
+            var modelo = "gemini-2.5-flash";
+            var url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelo + ":generateContent?key=" + encodeURIComponent(apiKey);
 
             try {
                 var resposta = await fetch(url, {
-                    method: 'POST',
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json'
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        prompt: promptTexto
+                        contents: [
+                            {
+                                parts: [
+                                    { text: promptTexto }
+                                ]
+                            }
+                        ]
                     })
                 });
 
                 var dados = await resposta.json().catch(function() { return {}; });
 
                 if (!resposta.ok) {
-                    console.error('Erro retornado pela API:', dados);
-                    var msgErro = dados.error || ('Código ' + resposta.status);
-                    alert('Erro ao processar a atividade: ' + msgErro);
+                    console.error("Erro retornado pela API:", dados);
+                    var msgErro = (dados.error && dados.error.message) ? dados.error.message : ("Código " + resposta.status);
+                    alert("Erro ao processar a atividade: " + msgErro);
                     return null;
                 }
 
-                if (dados.resultado) {
-                    return dados.resultado;
+                var partes = dados.candidates &&
+                             dados.candidates[0] &&
+                             dados.candidates[0].content &&
+                             dados.candidates[0].content.parts;
+
+                var textoGerado = Array.isArray(partes)
+                    ? partes.map(function(p) { return p.text || ""; }).join("").trim()
+                    : "";
+
+                if (textoGerado) {
+                    return textoGerado;
                 } else {
-                    alert('A IA não devolveu texto legível. Tente novamente.');
+                    alert("A IA não devolveu texto legível. Tente novamente.");
                     return null;
                 }
             } catch (erroRede) {
-                console.error('Falha de rede:', erroRede);
-                alert('Falha na comunicação de rede com o servidor.');
+                console.error("Falha de rede:", erroRede);
+                alert("Falha na comunicação de rede com o servidor.");
                 return null;
             }
         }
@@ -456,6 +473,7 @@
             var estudante = document.getElementById('pei-estudante') ? document.getElementById('pei-estudante').value.trim() : 'Estudante';
             var componente = document.getElementById('pei-componente') ? document.getElementById('pei-componente').value.trim() : 'Componente Curricular';
             var bimestre = document.getElementById('pei-bimestre') ? document.getElementById('pei-bimestre').value : '3º Bimestre';
+            var especificidade = document.getElementById('pei-especificidade') ? document.getElementById('pei-especificidade').value.trim() : '';
             var perfil = document.getElementById('pei-perfil') ? document.getElementById('pei-perfil').value.trim() : '';
             var habilidades = document.getElementById('pei-habilidades') ? document.getElementById('pei-habilidades').value.trim() : '';
 
@@ -490,6 +508,7 @@
                 '- Estudante: ' + estudante + '\n' +
                 '- Componente Curricular: ' + componente + '\n' +
                 '- Período: ' + bimestre + '\n' +
+                (especificidade ? ('- Especificidade / Diagnóstico / Apoio AEE: ' + especificidade + '\n') : '') +
                 '- Perfil e Necessidades do Estudante: ' + perfil + '\n' +
                 '- Habilidades Curriculares Previstas: ' + habilidades + '\n\n' +
                 'Estruture a resposta com as quatro seções oficiais, em linguagem técnica e com estratégias de DUA:\n\n' +
@@ -644,14 +663,12 @@
                 return;
             }
 
-            // Adiciona classe de impressão ao container de resultado
             elemento.classList.add('imprimir-alvo');
             var tituloOriginal = document.title;
             if (tituloDocumento) document.title = tituloDocumento;
 
             window.print();
 
-            // Restaura o estado normal após fechar a janela de impressão
             setTimeout(function() {
                 elemento.classList.remove('imprimir-alvo');
                 document.title = tituloOriginal;
